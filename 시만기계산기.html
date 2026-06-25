@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>급지만기 계산기</title>
+<style>
+:root {
+  --primary: #1a5fa8;
+  --primary-light: #e8f0fb;
+  --gray100: #f5f6f8;
+  --gray200: #e4e6ea;
+  --gray400: #b0b5bf;
+  --gray500: #8a8f99;
+  --gray700: #3c3f45;
+  --success: #1a7a42;
+  --success-light: #e6f4ec;
+  --warning: #b85c00;
+  --warning-light: #fff3e6;
+  --danger: #c0392b;
+  --danger-light: #fdecea;
+  --purple: #6b3fa0;
+  --purple-light: #f0eafa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  background: #eef0f4;
+  color: var(--gray700);
+  min-height: 100vh;
+  padding: 20px 12px 48px;
+}
+.wrap { max-width: 700px; margin: 0 auto; }
+
+header {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 14px 14px 0 0;
+  padding: 20px 24px 16px;
+}
+header h1 { font-size: 1.2rem; font-weight: 800; }
+
+.card {
+  background: #fff;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gray200);
+}
+.card:last-child { border-radius: 0 0 14px 14px; border-bottom: none; }
+
+.sec-title {
+  font-size: 0.72rem; font-weight: 800; color: var(--primary);
+  letter-spacing: 0.4px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 7px;
+}
+.sec-title::before {
+  content: ''; width: 3px; height: 13px;
+  background: var(--primary); border-radius: 2px; flex-shrink:0;
+}
+.sec-title.purple { color: var(--purple); }
+.sec-title.purple::before { background: var(--purple); }
+.sec-title.orange { color: var(--warning); }
+.sec-title.orange::before { background: var(--warning); }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.full { grid-column: 1/-1; }
+.fg { display: flex; flex-direction: column; gap: 4px; }
+
+label { font-size: 0.81rem; font-weight: 700; }
+label .sub { font-weight: 400; color: var(--gray500); font-size: 0.74rem; }
+
+select, input[type="date"], input[type="number"] {
+  border: 1.5px solid var(--gray200); border-radius: 8px;
+  padding: 8px 10px; font-size: 0.87rem; font-family: inherit;
+  color: var(--gray700); background: var(--gray100); width: 100%;
+}
+select:focus, input:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+.rm { display: flex; gap: 6px; align-items: center; }
+.rm input { max-width: 90px; }
+.rm span { font-size: 0.81rem; color: var(--gray500); white-space: nowrap; }
+
+.hint {
+  font-size: 0.73rem; color: var(--gray500);
+  background: var(--gray100); border-radius: 6px;
+  padding: 6px 10px; line-height: 1.55; margin-top: 3px;
+}
+.hint strong { color: var(--gray700); }
+.hint.warn { background: var(--warning-light); color: #7a3c00; }
+.hint.blue { background: var(--primary-light); color: #0d3f73; }
+
+.divider { border: none; border-top: 1px dashed var(--gray200); margin: 14px 0; }
+
+.btn {
+  display: block; width: 100%; padding: 12px;
+  background: var(--primary); color: #fff;
+  border: none; border-radius: 10px;
+  font-size: 0.97rem; font-weight: 800; font-family: inherit;
+  cursor: pointer; margin-top: 18px;
+}
+.btn:hover { background: #154d8c; }
+.btn-reset {
+  display: block; width: 100%; padding: 8px; background: none;
+  color: var(--gray500); border: 1.5px solid var(--gray200);
+  border-radius: 10px; font-size: 0.83rem; font-family: inherit;
+  cursor: pointer; margin-top: 7px;
+}
+
+/* Results */
+#results { display: none; }
+
+.rbox {
+  border-radius: 11px; padding: 14px 16px;
+  margin-bottom: 9px; border-left: 4px solid transparent;
+}
+.rbox.green  { background: var(--success-light); border-color: var(--success); }
+.rbox.orange { background: var(--warning-light);  border-color: var(--warning); }
+.rbox.red    { background: var(--danger-light);   border-color: var(--danger); }
+.rbox.blue   { background: var(--primary-light);  border-color: var(--primary); }
+.rbox.purple { background: var(--purple-light);   border-color: var(--purple); }
+.rbox.gray   { background: var(--gray100);         border-color: var(--gray400); }
+
+.rbox .rl { font-size: 0.71rem; font-weight: 800; margin-bottom: 5px; opacity: 0.65; }
+.rbox.red    .rl { color: var(--danger); }
+.rbox.orange .rl { color: var(--warning); }
+.rbox.green  .rl { color: var(--success); }
+.rbox.blue   .rl { color: var(--primary); }
+.rbox.purple .rl { color: var(--purple); }
+
+.rbox .rd { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.4px; }
+
+.chip {
+  display: inline-block; padding: 2px 7px; border-radius: 99px;
+  font-size: 0.69rem; font-weight: 800; margin-left: 5px; vertical-align: middle;
+}
+.chip-red    { background: var(--danger-light);   color: var(--danger); }
+.chip-orange { background: var(--warning-light);  color: var(--warning); }
+.chip-green  { background: var(--success-light);  color: var(--success); }
+.chip-blue   { background: var(--primary-light);  color: var(--primary); }
+.chip-purple { background: var(--purple-light);   color: var(--purple); }
+
+.tbl { width: 100%; border-collapse: collapse; font-size: 0.79rem; margin-top: 8px; }
+.tbl td { padding: 4px 6px; border-bottom: 1px solid rgba(0,0,0,0.07); }
+.tbl td:first-child { color: var(--gray500); }
+.tbl td:last-child  { font-weight: 700; text-align: right; }
+.tbl .tot td { font-weight: 800; border-top: 2px solid rgba(0,0,0,0.13); border-bottom: none; color: var(--gray700); }
+
+.bar-w { margin-top: 9px; }
+.bar-l { display: flex; justify-content: space-between; font-size: 0.71rem; opacity: 0.58; margin-bottom: 3px; }
+.bar-bg { background: rgba(0,0,0,0.08); border-radius: 99px; height: 6px; overflow: hidden; }
+.bar-f  { height: 100%; border-radius: 99px; }
+.fg-  { background: var(--success); }
+.fo-  { background: var(--warning); }
+.fr-  { background: var(--danger); }
+.fp-  { background: var(--purple); }
+
+.rnote { font-size: 0.76rem; margin-top: 7px; padding-top: 7px; border-top: 1px solid rgba(0,0,0,0.08); line-height: 1.55; opacity: 0.85; }
+
+.res-group-title {
+  font-size: 0.78rem; font-weight: 800; color: var(--gray500);
+  margin: 14px 0 8px; padding-bottom: 5px;
+  border-bottom: 1px solid var(--gray200);
+}
+
+@media(max-width:500px){
+  .g2{ grid-template-columns:1fr; }
+  .card{ padding:16px 14px; }
+  header{ padding:16px 14px 13px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>📋 급지만기 계산기</h1>
+</header>
+
+<!-- ① 기본 정보 -->
+<div class="card">
+  <div class="sec-title">기본 정보</div>
+  <div class="g2">
+    <div class="fg">
+      <label>직급</label>
+      <select id="grade" onchange="onGradeChange()">
+        <option value="">선택</option>
+        <option value="6">6급</option>
+        <option value="7">7급</option>
+        <option value="8">8급</option>
+        <option value="9">9급</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>직렬</label>
+      <select id="series">
+        <option value="">선택</option>
+        <option value="교육행정">교육행정</option>
+        <option value="시설관리">시설관리</option>
+        <option value="기타">기타</option>
+      </select>
+    </div>
+    <div class="fg full">
+      <label>현 근무기관 유형</label>
+      <select id="workplace">
+        <option value="">선택</option>
+        <option value="학교">학교 (유·초·중·고·특수)</option>
+        <option value="교육지원청">교육지원청 / 교육지원센터</option>
+      </select>
+    </div>
+    <div class="fg full">
+      <label>기준일</label>
+      <input type="date" id="today">
+    </div>
+  </div>
+</div>
+
+<!-- ② 정기전보 -->
+<div class="card">
+  <div class="sec-title">정기전보 만기 (제4조)</div>
+  <div class="g2">
+    <div class="fg full">
+      <label>현부서 임용일</label>
+      <input type="date" id="postDate">
+    </div>
+    <div class="fg full">
+      <label>② 현부서 휴직기간</label>
+      <div class="rm">
+        <input type="number" id="postLeaveM" placeholder="0" min="0">
+        <span>개월</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ③ 도교육청 급지만기 -->
+<div class="card">
+  <div class="sec-title purple">도교육청 급지만기 (경기도교육감 소속 지방공무원 보직관리 규정 [별표 1])</div>
+
+  <!-- 급지 안내 테이블 -->
+  <details style="margin-bottom:14px;">
+    <summary style="font-size:0.78rem; font-weight:700; cursor:pointer; color:var(--purple); padding:4px 0;">▶ 급지별 지역 구분 보기</summary>
+    <div style="margin-top:10px; font-size:0.76rem; line-height:1.6;">
+      <div style="background:var(--gray100); border-radius:8px; padding:10px 12px; margin-bottom:6px;">
+        <strong style="color:var(--primary);">1급지</strong> — 수원시, 성남시, 안양시, 과천시, 부천시, 광명시, 군포시, 의왕시, 의정부시, 구리시, 남양주시(다산), 하남시(미사·감일·위례), <strong>화성시(동탄)</strong>, 용인시(수지구), 고양시(일산동구·일산서구)
+      </div>
+      <div style="background:var(--gray100); border-radius:8px; padding:10px 12px; margin-bottom:6px;">
+        <strong style="color:var(--warning);">2급지</strong> — 안산시(대부 제외), 평택시(포승·현덕·팽성 제외), 광주시(남종·퇴촌·도척 제외), 하남시(미사·감일·위례 제외), <strong>화성시(동탄·송산·우정·서신·장안 제외 → 진안·병점·반월·향남 등)</strong>, <strong>오산시</strong>, 용인시(수지구·백암·원삼·이동·남사 제외), 시흥시(은행·신천·대야·계수), 김포시(통진·양촌·대곶·월곶·하성 제외), 동두천시, 양주시(일부), 고양시(일산동구·서구 제외), 남양주시(수동·조안·다산 제외), 파주시(운정동)
+      </div>
+      <div style="background:var(--gray100); border-radius:8px; padding:10px 12px; margin-bottom:6px;">
+        <strong style="color:var(--success);">3급지</strong> — 안산시(대부), 평택시(포승·현덕·팽성), 여주시, <strong>화성시(송산·우정·서신·장안)</strong>, 광주시(남종·퇴촌·도척), 양평군, 이천시, 용인시(백암·원삼·이동·남사), 안성시, 김포시(통진·양촌·대곶·월곶·하성), 시흥시(은행·신천·대야·계수 제외), 남양주시(수동·조안), 양주시(광적·남면·백석·장흥·은현), 파주시(운정동 제외), 연천군, 포천시, 가평군
+      </div>
+      <div style="background:var(--gray100); border-radius:8px; padding:10px 12px;">
+        <strong style="color:var(--gray500);">4급지</strong> — 법정 도서벽지
+      </div>
+    </div>
+  </details>
+
+  <div class="g2">
+    <div class="fg full">
+      <label>현재 급지</label>
+      <select id="gupji" onchange="onGupjiChange()">
+        <option value="">선택</option>
+        <option value="1">1급지 — 화성(동탄), 수원, 성남, 안양, 과천, 부천, 광명, 군포, 의왕 등</option>
+        <option value="2">2급지 — 오산시, 화성(진안·병점·반월·향남 등), 안산, 평택, 파주(운정) 등</option>
+        <option value="3">3급지 — 화성(송산·우정·서신·장안), 여주, 양평, 이천, 안성, 포천, 가평 등</option>
+        <option value="4">4급지 — 법정 도서벽지</option>
+      </select>
+    </div>
+
+    <div class="fg full" id="gupji-date-wrap" style="display:none;">
+      <label>현 급지 최초 임용일 <span class="sub">(이 급지에 처음 발령받은 날)</span></label>
+      <input type="date" id="gupjiDate">
+    </div>
+
+    <!-- 1급지 선택 시: 이전 2급지 기간 -->
+    <div class="fg full" id="prev2-wrap" style="display:none;">
+      <label>이전 2급지 근무기간 <span class="sub">(합산 10년 계산용, 없으면 0)</span></label>
+      <div class="rm">
+        <input type="number" id="prev2M" placeholder="0" min="0">
+        <span>개월</span>
+      </div>
+    </div>
+
+    <!-- 2급지 선택 시: 이전 1급지 기간 -->
+    <div class="fg full" id="prev1-wrap" style="display:none;">
+      <label>이전 1급지 근무기간 <span class="sub">(합산 10년 계산용, 없으면 0)</span></label>
+      <div class="rm">
+        <input type="number" id="prev1M" placeholder="0" min="0">
+        <span>개월</span>
+      </div>
+    </div>
+
+    <!-- 3급지 안내 -->
+    <div class="full" id="gupji3-hint" style="display:none;">
+      <div class="hint blue">3급지는 <strong>평생 근무 가능</strong>합니다.<br>단, <strong>6급 승진 시 관외 전보</strong> 대상이 됩니다.</div>
+    </div>
+
+    <!-- 4급지 안내 -->
+    <div class="full" id="gupji4-hint" style="display:none;">
+      <div class="hint blue">4급지(법정 도서벽지)는 별도 규정을 확인하세요.<br>일반적으로 근무기간 제한이 적용되지 않거나 별도 우대 규정이 있을 수 있습니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ④ 화성오산 급지만기 -->
+<div class="card">
+  <div class="sec-title orange">화성오산 급지만기 (특수 6년 규정)</div>
+
+  <div class="hint" style="margin-bottom:12px;">
+    화성오산 지역만 적용되는 특수 규정입니다.<br>
+    <strong>7급 이하</strong>: 오산 전역 + 화성 일부(동탄1·2, 병점, 진안, 반월) → 6년 → 타지역 전보<br>
+    <strong>6급</strong>: 동탄1·2신도시에서 6년 → 타지역 전보
+  </div>
+
+  <div class="g2">
+    <div class="fg full">
+      <label>화성오산 관내 최초 발령일 <span class="sub">(관내에 처음 발령받은 날)</span></label>
+      <input type="date" id="hwDate">
+    </div>
+
+    <div class="fg full">
+      <label>⑤ 근무기간 제한지역 최초임용일 <span class="sub">(오산·화성 제한구역에 처음 발령받은 날)</span></label>
+      <input type="date" id="a5Date" onchange="update5hal()">
+    </div>
+  </div>
+
+  <div id="hal5-info" style="display:none; margin-top:6px;">
+    <div class="hint warn">
+      <strong>2021.1.1. 이전 5할 자동 적용</strong><br>
+      <span id="hal5-txt"></span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <p style="font-size:0.78rem; color:var(--gray500); font-weight:700; margin-bottom:10px;">⑦ 제외기간 (개월 입력, 없으면 0)</p>
+
+  <div class="g2">
+    <div class="fg">
+      <label>제한지역 휴직기간</label>
+      <div class="rm"><input type="number" id="aLeaveM" placeholder="0" min="0"><span>개월</span></div>
+    </div>
+    <div class="fg">
+      <label>신설학교 개교 후 2년 근무기간</label>
+      <div class="rm"><input type="number" id="newSchM" placeholder="0" min="0"><span>개월</span></div>
+    </div>
+    <div class="fg full">
+      <label>화성오산 교육지원청 근무기간</label>
+      <div class="rm"><input type="number" id="officeM" placeholder="0" min="0"><span>개월</span></div>
+    </div>
+  </div>
+
+  <!-- 6급 동탄 별도 -->
+  <div id="dongtan-wrap" style="display:none;">
+    <div class="divider"></div>
+    <p style="font-size:0.78rem; font-weight:700; color:var(--warning); margin-bottom:10px;">6급 동탄 별도 계산 (제5조②)</p>
+    <div class="g2">
+      <div class="fg full">
+        <label>동탄지역 최초임용일</label>
+        <input type="date" id="dtDate">
+      </div>
+      <div class="fg">
+        <label>동탄 휴직기간</label>
+        <div class="rm"><input type="number" id="dtLeaveM" placeholder="0" min="0"><span>개월</span></div>
+      </div>
+      <div class="fg">
+        <label>동탄 교육지원청 근무기간</label>
+        <div class="rm"><input type="number" id="dtOfficeM" placeholder="0" min="0"><span>개월</span></div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" onclick="calc()">⏱ 급지만기 계산하기</button>
+  <button class="btn-reset" onclick="resetAll()">초기화</button>
+</div>
+
+<!-- 결과 -->
+<div class="card" id="results">
+  <div class="sec-title">계산 결과</div>
+  <div id="rc"></div>
+  <div class="hint" style="margin-top:12px;">※ 예상 결과이며 실제 전보는 임용권자 판단·결원·예외 조항에 따라 달라질 수 있습니다.</div>
+</div>
+
+</div>
+<script>
+// ── 초기값 ──────────────────────────────────────────
+document.getElementById('today').value = new Date().toISOString().split('T')[0];
+
+function onGradeChange() {
+  const g = document.getElementById('grade').value;
+  document.getElementById('dongtan-wrap').style.display = g === '6' ? 'block' : 'none';
+}
+
+function onGupjiChange() {
+  const v = document.getElementById('gupji').value;
+  document.getElementById('gupji-date-wrap').style.display = (v === '1' || v === '2') ? 'block' : 'none';
+  document.getElementById('prev2-wrap').style.display = v === '1' ? 'block' : 'none';
+  document.getElementById('prev1-wrap').style.display = v === '2' ? 'block' : 'none';
+  document.getElementById('gupji3-hint').style.display = v === '3' ? 'block' : 'none';
+  document.getElementById('gupji4-hint').style.display = v === '4' ? 'block' : 'none';
+}
+
+document.getElementById('a5Date').addEventListener('change', update5hal);
+document.getElementById('today').addEventListener('change', update5hal);
+
+function update5hal() {
+  const d5 = toDate(document.getElementById('a5Date').value);
+  const td = toDate(document.getElementById('today').value);
+  const CUT = new Date('2021-01-01');
+  const info = document.getElementById('hal5-info');
+  if (d5 && d5 < CUT && td) {
+    const pre = calM(d5, CUT);
+    const ex  = Math.floor(pre / 2);
+    document.getElementById('hal5-txt').textContent =
+      `⑤ 임용일(${fmtShort(d5)}) ~ 2021.1.1. : ${pre}개월 → 5할 제외 ${ex}개월`;
+    info.style.display = 'block';
+  } else { info.style.display = 'none'; }
+}
+
+// ── 유틸 ────────────────────────────────────────────
+function toDate(s) { return s ? new Date(s + 'T00:00:00') : null; }
+
+function calM(a, b) {
+  if (!a || !b || b <= a) return 0;
+  let m = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+  if (b.getDate() < a.getDate()) m--;
+  return Math.max(0, m);
+}
+
+function addM(d, m) {
+  const r = new Date(d);
+  r.setMonth(r.getMonth() + m);
+  return r;
+}
+
+function fmM(m) {
+  if (m <= 0) return '0개월';
+  const y = Math.floor(m/12), mo = m%12;
+  return [y?`${y}년`:'', mo?`${mo}개월`:''].filter(Boolean).join(' ');
+}
+
+const WD = ['일','월','화','수','목','금','토'];
+function fmt(d) {
+  if (!d) return '-';
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${WD[d.getDay()]})`;
+}
+function fmtShort(d) {
+  if (!d) return '-';
+  return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+}
+
+function pColor(p) { return p>=90?'red':p>=70?'orange':'green'; }
+function pFill(p)  { return p>=90?'fr-':p>=70?'fo-':'fg-'; }
+
+function mkBar(el, tot, s, e) {
+  const p = Math.min(100, Math.max(0, Math.round(el/tot*100)));
+  return `<div class="bar-w">
+    <div class="bar-l"><span>${fmtShort(s)}</span><span>${p}% 경과</span></div>
+    <div class="bar-bg"><div class="bar-f ${pFill(p)}" style="width:${p}%"></div></div>
+    <div class="bar-l" style="margin-top:2px;"><span></span><span>${fmtShort(e)}</span></div>
+  </div>`;
+}
+
+function mkBox(o) {
+  const chip = o.chip ? `<span class="chip chip-${o.chip.c}">${o.chip.t}</span>` : '';
+  const dateH = o.date
+    ? `<div class="rd">📅 ${fmt(o.date)}</div>`
+    : `<div class="rd" style="font-size:0.95rem;">${o.dateText||''}</div>`;
+  let rows = '';
+  if (o.rows) {
+    rows = '<table class="tbl">';
+    o.rows.forEach(r => { rows += `<tr class="${r.tot?'tot':''}"><td>${r.l}</td><td>${r.v}</td></tr>`; });
+    rows += '</table>';
+  }
+  return `<div class="rbox ${o.color}">
+    <div class="rl">${o.label}${chip}</div>
+    ${dateH}${rows}${o.bar||''}${o.note?`<div class="rnote">${o.note}</div>`:''}
+  </div>`;
+}
+
+// ── 계산 ─────────────────────────────────────────────
+function calc() {
+  const grade    = document.getElementById('grade').value;
+  const series   = document.getElementById('series').value;
+  const wp       = document.getElementById('workplace').value;
+  const today    = toDate(document.getElementById('today').value);
+  const postDate = toDate(document.getElementById('postDate').value);
+  const hwDate   = toDate(document.getElementById('hwDate').value);
+  const a5Date   = toDate(document.getElementById('a5Date').value);
+  const gupji    = document.getElementById('gupji').value;
+  const gupjiDate = toDate(document.getElementById('gupjiDate').value);
+
+  if (!grade || !series || !wp || !today) {
+    alert('직급, 직렬, 근무기관 유형, 기준일은 필수입니다.'); return;
+  }
+
+  let html = '';
+
+  // ════════════════════════════════════
+  // A. 정기전보 만기
+  // ════════════════════════════════════
+  if (postDate) {
+    const lim     = wp === '학교' ? 24 : 36;
+    const leaveM  = parseInt(document.getElementById('postLeaveM').value)||0;
+    const rawM    = calM(postDate, today);
+    const actM    = Math.max(0, rawM - leaveM);
+    const expiry  = addM(postDate, lim + leaveM);
+    const remM    = calM(today, expiry);
+    const isPast  = today >= expiry;
+    const pct     = Math.min(100, Math.round(actM/lim*100));
+
+    html += `<div class="res-group-title">📌 정기전보 만기 (제4조)</div>`;
+    html += mkBox({
+      color: isPast ? 'red' : pColor(pct),
+      label: `동일 보직 ${lim/12}년 만기 — ${wp === '학교' ? '학교 근무자' : '교육청 근무자'}`,
+      chip: isPast
+        ? {c:'red',t:'만기'}
+        : pct>=90?{c:'red',t:'임박'}:pct>=70?{c:'orange',t:'주의'}:{c:'green',t:'여유'},
+      date: isPast ? null : expiry,
+      dateText: isPast ? '⚠️ 이미 만기 도래 — 전보 대상' : undefined,
+      rows: [
+        {l:'현부서 임용일', v:fmt(postDate)},
+        {l:'② 휴직기간', v:leaveM?`${leaveM}개월`:'없음'},
+        {l:'③ 실근무기간', v:fmM(actM)},
+        {l:isPast?'초과 기간':'남은 기간', v:isPast?`만기 ${fmM(Math.abs(calM(expiry,today)))} 초과`:fmM(remM), tot:true},
+      ],
+      bar: !isPast ? mkBar(actM, lim, postDate, expiry) : '',
+      note: wp==='교육지원청' ? '소속 기관장 판단 시 1년 범위 내 전보 유예 가능 (제4조②)' : ''
+    });
+  }
+
+  // ════════════════════════════════════
+  // B. 도교육청 급지만기
+  // ════════════════════════════════════
+  html += `<div class="res-group-title">🏙️ 도교육청 급지만기</div>`;
+
+  if (!gupji) {
+    html += `<div class="rbox blue"><div class="rl">도교육청 급지만기</div>
+      <div style="font-size:0.82rem;margin-top:4px;">급지를 선택하면 계산됩니다.</div></div>`;
+  } else if (gupji === '4') {
+    html += mkBox({
+      color: 'blue',
+      label: '4급지 — 법정 도서벽지',
+      chip: {c:'blue', t:'별도 규정'},
+      date: null,
+      dateText: '별도 규정 확인 필요',
+      rows: [{l:'급지만기', v:'도서벽지 별도 규정 적용'}],
+      note: '법정 도서벽지는 일반 급지 제한 규정과 다를 수 있습니다. 인사담당자에게 확인하세요.'
+    });
+  } else if (gupji === '3') {
+    const totalM = gupjiDate ? calM(gupjiDate, today) : null;
+    html += mkBox({
+      color: 'green',
+      label: '3급지 — 평생 근무 가능',
+      chip: {c:'green',t:'제한 없음'},
+      date: null,
+      dateText: '3급지는 급지만기 없음',
+      rows: [
+        ...(gupjiDate ? [{l:'3급지 최초 임용일', v:fmt(gupjiDate)}, {l:'현재까지 3급지 근무기간', v:fmM(totalM)}] : []),
+        {l:'급지만기', v:'없음 (평생 근무 가능)', tot:true},
+      ],
+      note: grade==='6' ? '⚠️ 6급 승진 시 관외 전보 대상이 됩니다.' : ''
+    });
+  } else if (!gupjiDate) {
+    html += `<div class="rbox blue"><div class="rl">도교육청 급지만기</div>
+      <div style="font-size:0.82rem;margin-top:4px;">현 급지 최초 임용일을 입력하면 계산됩니다.</div></div>`;
+  } else {
+    const prev2M = parseInt(document.getElementById('prev2M').value)||0;
+    const prev1M = parseInt(document.getElementById('prev1M').value)||0;
+    const curM   = calM(gupjiDate, today);
+
+    if (gupji === '1') {
+      // 1급지: 9년(108개월) 만기, 1+2합산 10년(120개월)
+      const total1  = curM + prev1M; // 현재+이전 1급지 합산
+      const total12 = total1 + prev2M; // 1+2합산
+
+      const LIM1   = 108; // 9년
+      const LIM12  = 120; // 10년
+
+      // 1급지 단독 (9년)
+      const rem1   = LIM1 - total1;
+      const isPast1 = rem1 <= 0;
+      const pct1   = Math.min(100, Math.round(total1/LIM1*100));
+      const exp1   = isPast1 ? null : addM(today, rem1);
+
+      // 합산 (10년)
+      const rem12  = LIM12 - total12;
+      const isPast12 = rem12 <= 0;
+      const pct12  = Math.min(100, Math.round(total12/LIM12*100));
+      const exp12  = isPast12 ? null : addM(today, rem12);
+
+      html += mkBox({
+        color: isPast1 ? 'red' : pColor(pct1),
+        label: '1급지 단독 9년 만기',
+        chip: isPast1?{c:'red',t:'만기 → 타급지 이동'}:pct1>=90?{c:'red',t:'임박'}:pct1>=70?{c:'orange',t:'주의'}:{c:'purple',t:'여유'},
+        date: exp1,
+        dateText: isPast1 ? '⚠️ 만기 도래 — 타급지 이동 필수' : undefined,
+        rows: [
+          {l:'현 1급지 최초임용일', v:fmt(gupjiDate)},
+          {l:'현 1급지 근무기간', v:fmM(curM)},
+          ...(prev1M?[{l:'이전 1급지 근무기간', v:`+${fmM(prev1M)}`}]:[]),
+          {l:'1급지 총 근무기간', v:fmM(total1), tot:true},
+          {l:isPast1?'초과':'남은 기간', v:isPast1?`만기 ${fmM(Math.abs(rem1))} 초과`:fmM(rem1)},
+        ],
+        bar: !isPast1 ? mkBar(total1, LIM1, gupjiDate, exp1) : '',
+        note: isPast1 ? '타급지로 이동 필수. 이동 후 2년 이내 해당 급지 복귀 불가.' : ''
+      });
+
+      if (prev2M > 0) {
+        html += mkBox({
+          color: isPast12 ? 'red' : pColor(pct12),
+          label: '1+2급지 합산 10년 만기',
+          chip: isPast12?{c:'red',t:'만기'}:pct12>=90?{c:'red',t:'임박'}:pct12>=70?{c:'orange',t:'주의'}:{c:'purple',t:'여유'},
+          date: exp12,
+          dateText: isPast12 ? '⚠️ 합산 만기 도래 — 이동 필수' : undefined,
+          rows: [
+            {l:'1급지 총 근무기간', v:fmM(total1)},
+            {l:'이전 2급지 근무기간', v:fmM(prev2M)},
+            {l:'1+2급지 합산', v:fmM(total12), tot:true},
+            {l:isPast12?'초과':'남은 기간', v:isPast12?`만기 ${fmM(Math.abs(rem12))} 초과`:fmM(rem12)},
+          ],
+          bar: !isPast12 ? mkBar(total12, LIM12, gupjiDate, exp12) : ''
+        });
+      }
+    } else if (gupji === '2') {
+      // 2급지: 10년(120개월) 만기, 1+2합산도 동일
+      const total2  = curM + prev2M;
+      const total12 = total2 + prev1M;
+      const LIM = 120;
+
+      // 더 빠른 것 적용: total2 vs total12 — 두 개 다 보여주되 더 엄격한 것 강조
+      const remA  = LIM - total2;
+      const remB  = LIM - total12;
+      const isPastA = remA <= 0;
+      const isPastB = remB <= 0;
+      const isPastAny = isPastA || isPastB;
+      const pctA  = Math.min(100, Math.round(total2/LIM*100));
+      const pctB  = Math.min(100, Math.round(total12/LIM*100));
+      const expA  = isPastA ? null : addM(today, remA);
+      const expB  = isPastB ? null : addM(today, remB);
+
+      html += mkBox({
+        color: isPastA ? 'red' : pColor(pctA),
+        label: '2급지 단독 10년 만기',
+        chip: isPastA?{c:'red',t:'만기'}:pctA>=90?{c:'red',t:'임박'}:pctA>=70?{c:'orange',t:'주의'}:{c:'purple',t:'여유'},
+        date: expA,
+        dateText: isPastA ? '⚠️ 만기 도래 — 3급지 또는 타교육지원청 전보 필수' : undefined,
+        rows: [
+          {l:'현 2급지 최초임용일', v:fmt(gupjiDate)},
+          {l:'현 2급지 근무기간', v:fmM(curM)},
+          ...(prev2M?[{l:'이전 2급지 근무기간', v:`+${fmM(prev2M)}`}]:[]),
+          {l:'2급지 총 근무기간', v:fmM(total2), tot:true},
+          {l:isPastA?'초과':'남은 기간', v:isPastA?`만기 ${fmM(Math.abs(remA))} 초과`:fmM(remA)},
+        ],
+        bar: !isPastA ? mkBar(total2, LIM, gupjiDate, expA) : '',
+        note: isPastA ? '3급지 또는 타교육지원청 전보 필수. 이동 후 2년 이내 복귀 불가.' : ''
+      });
+
+      if (prev1M > 0) {
+        html += mkBox({
+          color: isPastB ? 'red' : pColor(pctB),
+          label: '1+2급지 합산 10년 만기',
+          chip: isPastB?{c:'red',t:'만기'}:pctB>=90?{c:'red',t:'임박'}:pctB>=70?{c:'orange',t:'주의'}:{c:'purple',t:'여유'},
+          date: expB,
+          dateText: isPastB ? '⚠️ 합산 만기 도래' : undefined,
+          rows: [
+            {l:'2급지 총 근무기간', v:fmM(total2)},
+            {l:'이전 1급지 근무기간', v:fmM(prev1M)},
+            {l:'1+2급지 합산', v:fmM(total12), tot:true},
+            {l:isPastB?'초과':'남은 기간', v:isPastB?`만기 ${fmM(Math.abs(remB))} 초과`:fmM(remB)},
+          ],
+          bar: !isPastB ? mkBar(total12, LIM, gupjiDate, expB) : ''
+        });
+      }
+    }
+  }
+
+  // ════════════════════════════════════
+  // C. 화성오산 급지만기 (6년)
+  // ════════════════════════════════════
+  html += `<div class="res-group-title">🏫 화성오산 급지만기 (특수 6년)</div>`;
+
+  // 적용 대상 판단
+  const g = parseInt(grade);
+  const isEA = series === '교육행정' || series === '시설관리';
+  const applicable7below = isEA && g >= 7; // 7급이하 → 오산+화성 제한구역
+  const applicable6 = isEA && g === 6;     // 6급 → 동탄만 (별도 계산)
+
+  if (!isEA) {
+    html += `<div class="rbox gray"><div class="rl">화성오산 급지만기</div>
+      <div style="font-size:0.82rem;margin-top:4px;">교육행정·시설관리 직렬에만 적용됩니다.</div></div>`;
+  } else {
+
+    // 화성오산 관내 최초 발령일 표시
+    if (hwDate) {
+      html += `<div class="rbox blue" style="margin-bottom:8px;">
+        <div class="rl" style="color:var(--primary);">화성오산 관내 최초 발령</div>
+        <div style="font-size:0.95rem;font-weight:700;">📅 ${fmt(hwDate)}</div>
+        <table class="tbl" style="margin-top:6px;"><tr><td>오늘까지 관내 총 재직</td><td>${fmM(calM(hwDate,today))}</td></tr></table>
+      </div>`;
+    }
+
+    if (applicable7below && a5Date) {
+      const LIMIT = 72;
+      const CUT   = new Date('2021-01-01');
+      const totalM = calM(a5Date, today);
+
+      let pre2021M = 0, hal5M = 0;
+      if (a5Date < CUT) {
+        pre2021M = calM(a5Date, CUT);
+        hal5M    = Math.floor(pre2021M / 2);
+      }
+
+      const leaveM  = parseInt(document.getElementById('aLeaveM').value)||0;
+      const newSchM = parseInt(document.getElementById('newSchM').value)||0;
+      const offM    = parseInt(document.getElementById('officeM').value)||0;
+      const exclAll = hal5M + leaveM + newSchM + offM;
+      const actM    = Math.max(0, totalM - exclAll);
+      const remM    = LIMIT - actM;
+      const isPast  = remM <= 0;
+      const pct     = Math.min(100, Math.round(actM/LIMIT*100));
+      const expiry  = isPast ? null : addM(today, remM);
+
+      const RESTRICT = 48; // 4년 = 전보제한 구간 시작
+      const inRestr  = actM >= RESTRICT && !isPast;
+      const restDate = actM < RESTRICT ? addM(today, RESTRICT - actM) : null;
+
+      html += mkBox({
+        color: isPast ? 'red' : pColor(pct),
+        label: '7급 이하 — 오산·화성 제한구역 6년 만기 (⑧ 실근무기간 기준)',
+        chip: isPast?{c:'red',t:'만기 → 타지역 전보'}
+          :inRestr?{c:'red',t:'전보제한 구간'}
+          :pct>=70?{c:'orange',t:'주의'}:{c:'green',t:'여유'},
+        date: expiry,
+        dateText: isPast ? '⚠️ 이미 만기 도래 — 타지역 전보 필요' : undefined,
+        rows: [
+          {l:'⑤ 제한지역 최초임용일', v:fmt(a5Date)},
+          {l:'⑥ 총 근무기간 (⑤~기준일)', v:fmM(totalM)},
+          ...(hal5M?[{l:`― 5할 제외 (2021.1.1.이전 ${fmM(pre2021M)}×50%)`, v:`-${fmM(hal5M)}`}]:[]),
+          ...(leaveM?[{l:'― 제한지역 휴직기간', v:`-${fmM(leaveM)}`}]:[]),
+          ...(newSchM?[{l:'― 신설학교 2년 근무기간', v:`-${fmM(newSchM)}`}]:[]),
+          ...(offM?[{l:'― 교육지원청 근무기간', v:`-${fmM(offM)}`}]:[]),
+          {l:'⑦ 제외기간 소계', v:fmM(exclAll)},
+          {l:'⑧ 실근무기간 (⑥-⑦)', v:fmM(actM), tot:true},
+          {l:isPast?'초과':'6년 만기까지 남은 기간', v:isPast?'만기 초과':fmM(remM)},
+        ],
+        bar: !isPast ? mkBar(actM, LIMIT, a5Date, expiry) : ''
+      });
+
+      // 전보제한 구간 안내
+      if (inRestr) {
+        html += `<div class="rbox red" style="margin-top:4px;">
+          <div class="rl" style="color:var(--danger);">🚫 전보제한 구간 (실근무 4년 초과) <span class="chip chip-red">현재 해당</span></div>
+          <div style="font-size:0.9rem;font-weight:700;margin-top:4px;">해당 제한지역 내 전보 불가</div>
+          <div style="font-size:0.8rem;margin-top:4px;">전보제한 해제(6년 만기): ${expiry?fmt(expiry):'이미 만기'}</div>
+        </div>`;
+      } else if (restDate) {
+        html += `<div class="rbox blue" style="margin-top:4px;">
+          <div class="rl" style="color:var(--primary);">ℹ️ 전보제한 시작 예정</div>
+          <div class="rd" style="font-size:1rem;">📅 ${fmt(restDate)}</div>
+          <div style="font-size:0.8rem;margin-top:4px;">이 날부터 해당 제한지역 내 전보 불가 (남은 기간: ${fmM(RESTRICT-actM)})</div>
+        </div>`;
+      }
+    } else if (applicable7below && !a5Date) {
+      html += `<div class="rbox blue"><div class="rl">화성오산 급지만기 (7급 이하)</div>
+        <div style="font-size:0.82rem;margin-top:4px;">⑤ 근무기간 제한지역 최초임용일을 입력하면 계산됩니다.</div></div>`;
+    }
+
+    // 6급 동탄 별도
+    if (applicable6) {
+      const dtDate   = toDate(document.getElementById('dtDate').value);
+      const dtLeaveM = parseInt(document.getElementById('dtLeaveM').value)||0;
+      const dtOffM   = parseInt(document.getElementById('dtOfficeM').value)||0;
+
+      if (dtDate) {
+        const LIMIT  = 72;
+        const totM   = calM(dtDate, today);
+        const exclM  = dtLeaveM + dtOffM;
+        const actM   = Math.max(0, totM - exclM);
+        const remM   = LIMIT - actM;
+        const isPast = remM <= 0;
+        const pct    = Math.min(100, Math.round(actM/LIMIT*100));
+        const expiry = isPast ? null : addM(today, remM);
+
+        html += mkBox({
+          color: isPast?'red':pColor(pct),
+          label: '6급 — 동탄1·2신도시 6년 만기 (제5조②)',
+          chip: isPast?{c:'red',t:'만기'}:pct>=90?{c:'red',t:'임박'}:pct>=70?{c:'orange',t:'주의'}:{c:'green',t:'여유'},
+          date: expiry,
+          dateText: isPast?'⚠️ 만기 도래 — 타지역 전보 필요':undefined,
+          rows: [
+            {l:'동탄 최초임용일', v:fmt(dtDate)},
+            {l:'총 근무기간', v:fmM(totM)},
+            ...(dtLeaveM?[{l:'― 동탄 휴직기간', v:`-${fmM(dtLeaveM)}`}]:[]),
+            ...(dtOffM?[{l:'― 동탄 교육지원청 근무기간', v:`-${fmM(dtOffM)}`}]:[]),
+            {l:'실근무기간', v:fmM(actM), tot:true},
+            {l:isPast?'초과':'남은 기간', v:isPast?'만기 초과':fmM(remM)},
+          ],
+          bar: !isPast ? mkBar(actM, LIMIT, dtDate, expiry) : ''
+        });
+      } else {
+        html += `<div class="rbox blue"><div class="rl">화성오산 급지만기 (6급 동탄)</div>
+          <div style="font-size:0.82rem;margin-top:4px;">동탄지역 최초임용일을 입력하면 계산됩니다.</div></div>`;
+      }
+    }
+  }
+
+  document.getElementById('rc').innerHTML = html;
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function resetAll() {
+  ['grade','series','workplace','gupji'].forEach(id=>document.getElementById(id).value='');
+  ['postDate','hwDate','a5Date','gupjiDate','dtDate'].forEach(id=>document.getElementById(id).value='');
+  ['postLeaveM','aLeaveM','newSchM','officeM','dtLeaveM','dtOfficeM','prev1M','prev2M']
+    .forEach(id=>document.getElementById(id).value='');
+  document.getElementById('today').value = new Date().toISOString().split('T')[0];
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('hal5-info').style.display = 'none';
+  document.getElementById('dongtan-wrap').style.display = 'none';
+  document.getElementById('gupji-date-wrap').style.display = 'none';
+  document.getElementById('prev1-wrap').style.display = 'none';
+  document.getElementById('prev2-wrap').style.display = 'none';
+  document.getElementById('gupji3-hint').style.display = 'none';
+  document.getElementById('gupji4-hint').style.display = 'none';
+}
+</script>
+</body>
+</html>
