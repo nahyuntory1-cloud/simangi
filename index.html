@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>시만기 계산기 – 경기도화성오산교육지원청</title>
+<title>급지만기 계산기 – 경기도화성오산교육지원청</title>
 <style>
 :root {
   --primary: #1a5fa8;
@@ -168,7 +168,7 @@ select:focus, input:focus { outline: none; border-color: var(--primary); backgro
 <div class="container">
 
 <header>
-  <h1>📋 시만기 계산기</h1>
+  <h1>📋 급지만기 계산기</h1>
 </header>
 
 <!-- 기본 정보 -->
@@ -463,7 +463,7 @@ function calculate() {
     const rawM  = calMonths(postDate, today);
     const actM  = Math.max(0, rawM - leaveM);
 
-    // 시만기 = 임용일 + (제한 개월 + 휴직 개월)
+    // 급지만기 = 임용일 + (제한 개월 + 휴직 개월)
     const expiry   = addMonths(postDate, limitM + leaveM);
     const remainM  = calMonths(today, expiry);
     const isPast   = today >= expiry;
